@@ -1,13 +1,16 @@
-from sqlalchemy import Table, Column, Integer, String
-from db.database import metadata
+from sqlmodel import SQLModel, Field
 
 
-user = Table(
-    "users",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("FirstName", String, nullable=False),
-    Column("LastName", String, nullable=False),
-    Column("email", String, nullable=False),
-    Column("password", String, nullable=False),
-)
+class UserBase(SQLModel):
+    first_name: str
+    last_name: str
+    email: str
+    password: str # hashed password
+
+
+class Users(UserBase, table=True):
+    id: int = Field(default=None, primary_key=True)
+
+
+class UserCreate(UserBase):
+    pass
