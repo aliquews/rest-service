@@ -1,16 +1,28 @@
-from sqlmodel import SQLModel, Field
+from typing import Optional
+from pydantic import BaseModel
 
 
-class UserBase(SQLModel):
-    first_name: str
-    last_name: str
+class Headers(BaseModel):
+    Authorization: str
+
+class UserCreate(BaseModel):
+    firstName: str
+    lastName: str
     email: str
-    password: str # hashed password
+    password: str
 
 
-class Users(UserBase, table=True):
-    id: int = Field(default=None, primary_key=True)
+
+class UserReadContent(BaseModel):
+    id: int
+    firstName: str
+    lastName: str
+    email: str
+
+    class Config:
+        orm_mode = True
 
 
-class UserCreate(UserBase):
-    pass
+class UserRead(BaseModel):
+    headers: Headers
+    content: UserReadContent

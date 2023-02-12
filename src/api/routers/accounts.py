@@ -1,88 +1,64 @@
-from typing import List
-from fastapi import APIRouter, Response, status, HTTPException, Query
-from pydantic import BaseModel, Field
+import secrets
+import base64
+import json
 
-class UserRequest(BaseModel):
-    firstName: str
-    lastName: str
-    email: str
-    password: str
+from fastapi import APIRouter, Response, HTTPException, Depends, status, Header
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-class UserDB(UserRequest):
-    id: int | None = None
+from sqlalchemy.ext.asyncio import AsyncSession
 
-class UserResponse(BaseModel):
-    id: int | None
-    firstName: str
-    lastName: str
-    email: str
 
-fake_db: list[UserDB] = []
+from src.models.accounts import UserCreate, UserReadContent
+from src.api.depend.accounts import validate_registration
+from src.db.database import get_async_session
+
+from src.crud import user as user_crud
+
 
 
 router = APIRouter(tags=["Users"])
-
-def validate_registration(user: UserRequest) -> None | int:
-    props = [
-        len(user.firstName.replace(" ", "")) if isinstance(user.firstName, str) else 0,
-        len(user.lastName.replace(" ", "")) if isinstance(user.lastName, str) else 0,
-        len(user.email.replace(" ", "")) if isinstance(user.email, str) else 0,
-        len(user.password.replace(" ", "")) if isinstance(user.password, str) else 0,
-    ]
-    if not all(props):
-        return 400
-    return None
-
-@router.post("/registration", response_model=UserResponse | dict)
-async def user_registration(user: UserRequest, response: Response):
-    status_code = validate_registration(user)
-    if status_code:
-        raise HTTPException(status_code=400, detail="Invalid form fields")
-    fake_db.append(user)
-    id = fake_db.index(user)
-    userout: UserDB = UserDB(
-        id=id,
-        firstName=user.firstName,
-        lastName=user.lastName,
-        email=user.email,
-        password=user.password,
-    )
-    fake_db.pop(id)
-    fake_db.append(userout)
-    return userout
+security = HTTPBasic()
 
 
-@router.get("/accounts/{accountid}", response_model= UserResponse)
-async def get_user_info(accountid: int):
-    return fake_db[accountid]
+def basic_auth(username, password):
+    token = base64.b64encode(f"{username}:{password}".encode()).decode("ascii")
+    return f'Basic {token}'
 
 
-@router.get("/accounts/search", response_model=List[UserResponse])
-async def get_user_by_query(
-    firstName: str,
-    lastName: str,
-    email: str,
-    _from: int,
-    size: int,
+
+async def get_current_user(authorization: str = Header(None)):
+    if authorization is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+        )
+    return authorization
+
+
+@router.post("/registration", response_model=UserReadContent)
+async def register_user(
+    user: UserCreate,
+    response: Response,
+    credentials: HTTPBasicCredentials = Depends(security),
+    session: AsyncSession = Depends(get_async_session),
 ):
-    pass
+    if validate_registration(user):
+        return HTTPException(
+            status_code=400,
+            detail="Incorrect input data",
+        )
+    userDB = await user_crud.create(session=session,**user.dict())
+    content = UserReadContent.from_orm(userDB)
 
-@router.put("/accounts/{accountid}", response_model=UserResponse)
-async def update_user_info(accountid: int, user: UserRequest):
-    status_code = validate_registration(user)
-    if status_code:
-        raise HTTPException(status_code=400, detail="Invalid form fields")
-    userout: UserDB = UserDB(
-        id=accountid,
-        firstName=user.firstName,
-        lastName=user.lastName,
-        email=user.email,
-        password=user.password,
-    )
-    fake_db[accountid] = userout
-    return userout
+    token = basic_auth(user.email, user.password)
+    response.headers['Authorization'] = token
+
+    return content
 
 
-@router.delete("/accounts/{accountid}")
-async def delete_user(accountid: int):
-    fake_db.pop(accountid)
+@router.get("/accounts/{accountid}", response_model=UserReadContent)
+async def get_account_info(accountid: int, auth: str = Depends(get_current_user), session: AsyncSession = Depends(get_async_session)):
+    user = await user_crud.get(accountid, session)
+    
+    userOut = UserReadContent.from_orm(user.User)
+    return userOut
