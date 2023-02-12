@@ -11,6 +11,9 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
+    class Config:
+        orm_mode = True
+
 
 
 class UserReadContent(BaseModel):
