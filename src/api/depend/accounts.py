@@ -1,7 +1,11 @@
 import base64
 from fastapi import HTTPException, status, Header
+from fastapi.security import HTTPBasicCredentials
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.accounts import UserCreate
+from src.crud.user import get
 
 
 def validate_registration(user: UserCreate) -> None | int:
@@ -44,3 +48,13 @@ async def get_current_user(authorization: str = Header(None)):
             detail="Unauthorized",
         )
     return authorization
+
+async def validate_change_user(credentials: HTTPBasicCredentials, id: int, session: AsyncSession):
+    user = await get(session, id=id)
+    userModel = UserCreate.from_orm(user.User)
+    hashed_pass = base64.b64encode(credentials.password.encode()).decode('ascii')
+    if credentials.username != userModel.email or hashed_pass != userModel.password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )

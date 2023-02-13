@@ -1,7 +1,7 @@
 import base64
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import exc, update, select
+from sqlalchemy import exc, update, select, delete
 from fastapi import HTTPException, status
 
 from src.db.database import get_async_session
@@ -37,16 +37,17 @@ async def update_user(id, session: AsyncSession, **kwargs):
         )
     try:
         await session.commit()
-        return await get(id, session)
-    except [Exception, exc.IntegrityError]:
+        return await get(session, id=id)
+    except Exception as e:
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
-async def get(id, session: AsyncSession):
-    query = select(User).where(User.id == id)
+async def get(session: AsyncSession, **kwargs):
+    key = list(kwargs.keys())[0]
+    query = select(User).where(User.__dict__[key] == kwargs[key])
     result = list(await session.execute(query))
     if len(result) == 0:
         raise HTTPException(
@@ -68,8 +69,8 @@ async def get_many(session: AsyncSession, from_: int, size: int, **kwargs):
     return result[from_:size]
 
 
-async def delete(id, session: AsyncSession):
-    query = session.delete(User).where(User.id == id)
+async def delete_(id, session: AsyncSession):
+    query = delete(User).where(User.id == id)
     await session.execute(query)
     try:
         await session.commit()

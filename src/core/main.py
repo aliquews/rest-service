@@ -9,7 +9,7 @@ app = FastAPI()
 async def update_authorization_header(request, call_next):
     response = await call_next(request)
 
-    if request.url.path == "/accounts" and request.method == "PUT":
+    if request.url.path == "/accounts{accountid}" and request.method == "PUT":
         authorization = request.headers.get("Authorization")
         if authorization is None:
             raise HTTPException(status_code=400, detail="Authorization header not found")
