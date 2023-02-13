@@ -1,8 +1,6 @@
-from sqlalchemy import Column, String, Integer, update
+from sqlalchemy import Column, String, Integer, BigInteger, Float
 from .database import Base
 
-# class User(SQLAlchemyBaseUserTable[int], Base):
-#     pass
 
 class User(Base):
     __tablename__ = "users"
@@ -20,3 +18,13 @@ class User(Base):
             f")>"
         )
     
+
+class Location(Base):
+    __tablename__ = "locations"
+    id = Column(BigInteger,primary_key=True, autoincrement=True)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    uniq_coord = Column(BigInteger, unique=True)
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__}(lat={self.latitude}, lon={self.longitude})>'

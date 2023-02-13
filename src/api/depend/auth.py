@@ -5,7 +5,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.database import get_async_session
-from src.crud import user as user_crud
+from crud import account as user_crud
 from src.models.accounts import UserCreate
 
 

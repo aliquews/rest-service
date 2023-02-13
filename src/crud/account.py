@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import exc, update, select, delete
 from fastapi import HTTPException, status
 
-from src.db.database import get_async_session
 from src.db.tables import User
 
 

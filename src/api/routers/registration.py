@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.accounts import UserCreate, UserReadContent
 from src.db.database import get_async_session
 from src.api.depend.accounts import validate_registration
-from src.crud import user as user_crud
+from crud import account as user_crud
 
 
 
