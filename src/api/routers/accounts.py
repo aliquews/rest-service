@@ -13,7 +13,7 @@ from src.api.depend.accounts import validate_registration, validate_id, validate
 from src.api.depend.auth import auth_basic
 from src.db.database import get_async_session
 
-from crud import account as user_crud
+from src.crud import account as user_crud
 
 
 router = APIRouter(

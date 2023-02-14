@@ -19,10 +19,52 @@ async def get_(id: int, session: AsyncSession):
     return result[0]
 
 async def create_(session: AsyncSession, **kwargs):
-    pass
+    location = Location(**kwargs)
+    session.add(location)
 
-async def update_(session: AsyncSession, **kwargs):
-    pass
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Location is already exists",
+        )
+    return location
+
+async def update_(id: int, session: AsyncSession, **kwargs):
+    try:
+        query = update(Location).where(Location.id == id).values(**kwargs).execution_options(synchronize_session='fetch')
+        await session.execute(query)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+    try:
+        await session.commit()
+        return await get_(id=id, session=session)
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
 
 async def delete_(id: int, session: AsyncSession):
-    pass
+    query = delete(Location).where(Location.id == id)
+    try:
+        await session.execute(query)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = str(e),
+        )
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from src.models.locations import LocationCreate, LocationRead
 from src.api.depend.auth import auth_basic
+from src.api.depend.accounts import validate_id
 from src.db.database import get_async_session
 from src.crud import location as crud
 
@@ -24,7 +25,7 @@ async def create_location(
 
 @router.get("/locations/{pointid}")
 async def get_location_info(
-    pointid: int,
+    pointid: int = Depends(validate_id),
     session: AsyncSession = Depends(get_async_session),
     
 ):
@@ -34,14 +35,17 @@ async def get_location_info(
 
 @router.put("/locations/{pointid}")
 async def update_location_info(
-    pointid: int,
+    pointid: int = Depends(validate_id),
     session: AsyncSession = Depends(get_async_session),
 ):
-    pass
+    point = await crud.update_(id=pointid, session=session)
+    locOut = LocationRead.from_orm(point.Location)
+    return locOut
 
 @router.delete("/locations/{pointid}")
 async def delete_location(
-    pointid: int,
+    pointid: int = Depends(validate_id),
     session: AsyncSession = Depends(get_async_session),
 ):
-    pass
+    await crud.delete_(id=pointid, session=session)
+    return

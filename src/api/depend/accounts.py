@@ -5,7 +5,7 @@ from fastapi.security import HTTPBasicCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.accounts import UserCreate
-from crud.account import get
+from src.crud.account import get
 
 
 def validate_registration(user: UserCreate) -> None | int:

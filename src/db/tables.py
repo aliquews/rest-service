@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, BigInteger, Float
+from sqlalchemy import Column, String, Integer, BigInteger, Float, UniqueConstraint
 from .database import Base
 
 
@@ -24,7 +24,9 @@ class Location(Base):
     id = Column(BigInteger,primary_key=True, autoincrement=True)
     latitude = Column(Float)
     longitude = Column(Float)
-    uniq_coord = Column(BigInteger, unique=True)
+
+    UniqueConstraint(latitude, longitude)
+
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}(lat={self.latitude}, lon={self.longitude})>'
